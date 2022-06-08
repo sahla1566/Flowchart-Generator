@@ -1,7 +1,247 @@
-OUTPUT "are we insane?"
-INPUT ans
-IF ans = "yes" THEN
-	OUTPUT "correct"
-ELSE
-	OUTPUT "incorrect"
-ENDIF
+#include <Servo.h>
+#include <ESP8266WiFi.h>
+#include "ESP8266WiFi.h"
+#define INTERVAL 1//5sec
+#ifndef APSSID
+#define APSSID "SMARTEG"
+#define APPSK  "12345678"
+#endif
+const int trigPin = 0;
+const int echoPin = 2;
+int duration ;
+int distanceCm ;
+Servo myservo1;
+Servo myservo2;
+WiFiClient client;
+WiFiServer server(80);
+const char *ssid = APSSID;
+const char *password = APPSK;
+String  data =""; 
+String  request;
+//int SOFT_HARD = 5;     /* GPIO2(D4) -> IN3   */
+//int DUST_ROT = 4;   /* GPIO15(D8) -> IN1  */
+int MOTOR1_1 = 14;    /* GPIO0(D3) -> IN4   */
+int MOTOR1_2= 12;  /* GPIO13(D7) -> IN2  */
+int MOTOR2_1 = 13;  /* GPIO13(D7) -> IN2  */
+int MOTOR2_2= 15;  /* GPIO13(D7) -> IN2  */
+ int pos;
+ int flot=0;
+ int flot1=0;
+void setup()
+{
+ Serial.begin(115200);
+  server.begin();
+  WiFi.softAP(ssid, password);
+  IPAddress IP = WiFi.softAPIP();
+  Serial.println(WiFi.localIP());
+   Serial.print("AP IP address: ");
+  Serial.println(IP); 
+  myservo1.attach(5);
+   myservo2.attach(4);
+   myservo2.write(50);  
+    myservo1.write(25);
+  //pinMode(SOFT_HARD, OUTPUT);
+  //pinMode(DUST_ROT, OUTPUT); 
+   pinMode(trigPin,OUTPUT);
+ pinMode(echoPin,INPUT);
+  pinMode(MOTOR1_1, OUTPUT);  
+  pinMode(MOTOR1_2, OUTPUT);
+  pinMode(MOTOR2_1, OUTPUT);
+  pinMode(MOTOR2_2, OUTPUT); 
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,LOW);
+  digitalWrite(MOTOR2_1,LOW);
+  digitalWrite(MOTOR2_2,LOW);
+  delay(100);
+}
+void distance()
+{
+ digitalWrite(trigPin, LOW);
+ delayMicroseconds(2);
+ digitalWrite(trigPin, HIGH);
+ delayMicroseconds(10);
+ digitalWrite(trigPin, LOW);
+ duration = pulseIn(echoPin, HIGH);
+ distanceCm= duration*0.034/2;
+  Serial.println(distanceCm);
+ delay(10); 
+ if((distanceCm<25)&&(distanceCm>0))                              //6
+  {
+    digitalWrite(MOTOR1_1,HIGH);
+  digitalWrite(MOTOR1_2,LOW);  
+  digitalWrite(MOTOR2_1,HIGH);
+  digitalWrite(MOTOR2_2,LOW); 
+  delay(2000);
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,HIGH);  
+  digitalWrite(MOTOR2_1,HIGH);
+  digitalWrite(MOTOR2_2,LOW); 
+   delay(3000);
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,LOW);  
+  digitalWrite(MOTOR2_1,LOW);
+  digitalWrite(MOTOR2_2,LOW);
+  }
+   }
+void loop()
+{ 
+ distance();
+ client = server.available();
+ if (!client) return; 
+  while(!client.available())
+    {
+    delay(1);
+  request = client.readStringUntil('\r');
+   Serial.println(request);
+  client.flush();
+     data = checkClient ();
+    }
+if (request.indexOf("/reset")!= -1)
+  {
+ }
+  if (request.indexOf("/auto")!= -1)
+  {
+    while(flot<10)
+    {
+      flot++;
+    distance();
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,HIGH);  
+  digitalWrite(MOTOR2_1,LOW);
+  digitalWrite(MOTOR2_2,HIGH);
+   distance();
+  delay(5000);
+   distance();
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,LOW);  
+  digitalWrite(MOTOR2_1,LOW);
+  digitalWrite(MOTOR2_2,LOW);
+   distance();
+  for (pos = 50; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo2.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(10);                       // waits 15ms for the servo to reach the position
+  }  for (pos = 0; pos <= 180; pos += 1) 
+    { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo1.write(pos);      
+    delay(10);           
+  }
+  for (pos = 180; pos >= 25; pos -= 1) 
+  { // goes from 180 degrees to 0 degrees
+    myservo2.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(10);                       // waits 15ms for the servo to reach the position
+  }
+   for (pos = 50; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    myservo2.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(10);                       // waits 15ms for the servo to reach the position
+  }
+    for (pos = 180; pos >= 0; pos -= 1) 
+  { // goes from 180 degrees to 0 degrees
+    myservo1.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(10); 
+     while(!client.available())
+    {
+    delay(1);
+  request = client.readStringUntil('\r');
+   Serial.println(request);
+  client.flush();
+     data = checkClient ();
+    }
+ }
+  request = client.readStringUntil('\r');
+  }
+  }
+  if (request.indexOf("/hard")!= -1)
+  {
+ }
+    if (request.indexOf("/soft")!= -1)
+  {
+    }
+  if (request.indexOf("/left")!= -1)
+  {
+  digitalWrite(MOTOR1_1,HIGH);
+  digitalWrite(MOTOR1_2,LOW);  
+  digitalWrite(MOTOR2_1,LOW);
+  digitalWrite(MOTOR2_2,HIGH); 
+  delay(400);
+  }
+     if (request.indexOf("/right")!= -1)
+  {
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,HIGH);  
+  digitalWrite(MOTOR2_1,HIGH);
+  digitalWrite(MOTOR2_2,LOW); 
+   delay(400);
+  }
+     if (request.indexOf("/front")!= -1)
+  {
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,HIGH);  
+  digitalWrite(MOTOR2_1,LOW);
+  digitalWrite(MOTOR2_2,HIGH);
+   delay(400);
+  }
+   if (request.indexOf("/back")!= -1)
+  {
+  digitalWrite(MOTOR1_1,HIGH);
+  digitalWrite(MOTOR1_2,LOW);  
+  digitalWrite(MOTOR2_1,HIGH);
+  digitalWrite(MOTOR2_2,LOW); 
+  delay(400);
+  }
+  else
+  {
+  digitalWrite(MOTOR1_1,LOW);
+  digitalWrite(MOTOR1_2,LOW);  
+  digitalWrite(MOTOR2_1,LOW);
+  digitalWrite(MOTOR2_2,LOW); 
+  }
+    }
+// void trigr()
+//    {
+//    delay(10);
+//  request = client.readStringUntil('\r');
+//  client.flush();
+//  client.println("HTTP/1.1 200 OK");
+//  client.println("Content-Type: text/html");
+//  client.println(""); //  IMPORTANT
+//  client.println("<!DOCTYPE HTML>");
+//  client.println("<html>");
+//  client.print('/');
+//  client.println(L1);
+//  client.print('/');
+//  client.println(T2);
+//  client.print('/');
+//  client.println(L2);
+//  client.print('/');
+//  client.println(L3);
+//  client.print('/');
+//  client.println(L4);
+//  client.print('/');
+//  client.println(F1);
+//  client.print('/');
+//  client.println(F2);
+//  client.print('/');
+//  client.println(F3);
+//  client.print('/');
+//  client.println(F4);
+//  Serial.println(L1);
+//  Serial.println(L2);
+//  Serial.println(L3);
+//  Serial.println(L4);
+//  Serial.println(F1);
+//  Serial.println(F2);
+//  Serial.println(F3);
+//  Serial.println(F4);
+   // }
+        
+    String checkClient (void)
+{
+  while(!client.available()) delay(1); 
+  String request = client.readStringUntil('\r');
+  request.remove(0, 5);
+  request.remove(request.length()-9,9);
+  return request;
+}
